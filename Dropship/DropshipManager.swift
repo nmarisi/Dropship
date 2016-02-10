@@ -3,34 +3,72 @@
 //
 //  Created by Nahuel Marisi on 2015-12-03.
 
-protocol Droppable: NSObjectProtocol {
+
+typealias DragDropView = protocol<UIDynamicItem, NSObjectProtocol>
+
+protocol Droppable: DragDropView {
     
 }
 
-protocol Draggable : NSObjectProtocol {
+protocol Draggable : DragDropView {
+    
+    func didBeginDragging()
+    func didEndDragging()
 }
 
 class TestView: UIView, Draggable {
+    func didBeginDragging() {
+    }
+    func didEndDragging() {
+        
+    }
+}
+
+class DropshipGestureRecognizer: UIPanGestureRecognizer {
     
+}
+
+extension UIView {
+       
+    private func removeDropshipGestureFromView() {
+        
+        guard var gestures = self.gestureRecognizers else {
+            return
+        }
+        
+        for (index, gesture) in gestures.enumerate() {
+            
+            if gesture is DropshipGestureRecognizer {
+                gestures.removeAtIndex(index)
+            }
+        }
+        
+        
+    }
 }
 
 class DropshipManager {
     
-    typealias DragView = protocol<UIDynamicItem, Draggable>
-    typealias DropView = protocol<UIDynamicItem, Droppable>
-   
-    var draggableItems = [DragView]()
-    var droppableItems = [DropView]()
+    var draggableItems = [Draggable]()
+    var droppableItems = [Droppable]()
    
     func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
         draggableItems.append(item)
+        
+        let panGesture = DropshipGestureRecognizer(target: self, action: "draggingView:")
+        panGesture.maximumNumberOfTouches = 1
+        panGesture.minimumNumberOfTouches = 1
+        item.addGestureRecognizer(panGesture)
     }
     
     func deregisterDraggableItem<T: UIView where T: Draggable>(item: T) {
         
         for (index, draggableItem) in draggableItems.enumerate() {
             if draggableItem.isEqual(item) {
-                    draggableItems.removeAtIndex(index)
+                
+                item.removeDropshipGestureFromView()
+                draggableItems.removeAtIndex(index)
+                
                 }
         }
     }
@@ -47,4 +85,28 @@ class DropshipManager {
             }
         }
     }
+    
+    // MARK: DropshipGestureRecognizer action
+    func draggingView(sender: DropshipGestureRecognizer) {
+        
+        guard let view = sender.view as? Draggable else {
+            return
+        }
+        
+        switch (sender.state) {
+        case .Began:
+            view.didBeginDragging()
+        
+        case .Cancelled:
+            fallthrough
+        
+        case .Ended:
+            view.didEndDragging()
+            
+        default:
+            break
+        }
+        
+    }
+
 }
