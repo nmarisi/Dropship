@@ -29,7 +29,7 @@ class DropshipGestureRecognizer: UIPanGestureRecognizer {
 }
 
 extension UIView {
-       
+    
     private func removeDropshipGestureFromView() {
         
         guard var gestures = self.gestureRecognizers else {
@@ -42,17 +42,28 @@ extension UIView {
                 gestures.removeAtIndex(index)
             }
         }
-        
-        
     }
 }
 
-class DropshipManager {
+class DropshipManager: NSObject {
     
-    var draggableItems = [Draggable]()
+    var draggableItems = [UIView]()
     var droppableItems = [Droppable]()
+    
+    // TODO: hack for testing
+    var lastLocation: CGPoint = CGPointZero
    
-    func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
+    // A view that is shared by both the draggable and droppable items.
+    // The dragging will occur inside this view.
+    // Usually the UIViewController's view.
+    var mainView: UIView
+    
+    init(mainView: UIView) {
+        self.mainView = mainView
+    }
+   
+    //func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
+    func registerDraggableItem(item: UIView) {
         draggableItems.append(item)
         
         let panGesture = DropshipGestureRecognizer(target: self, action: "draggingView:")
@@ -88,21 +99,33 @@ class DropshipManager {
     
     // MARK: DropshipGestureRecognizer action
     func draggingView(sender: DropshipGestureRecognizer) {
-        
-        guard let view = sender.view as? Draggable else {
+       
+       //guard let view = sender.view where view is Draggable else {
+       guard let view = sender.view else {
             return
         }
-        
+   
         switch (sender.state) {
         case .Began:
-            view.didBeginDragging()
-        
+            (view as? Draggable)?.didBeginDragging()
+            
+            view.superview?.bringSubviewToFront(view)
+            lastLocation = view.center
+            
+        case .Changed:
+            let translation = sender.translationInView(view.superview!)
+            let lastLocation = view.center
+            view.center = CGPointMake(lastLocation.x + translation.x, lastLocation.y + translation.y)
+            sender.setTranslation(CGPointZero, inView: view.superview!)
+    
+    
+    
         case .Cancelled:
             fallthrough
         
         case .Ended:
-            view.didEndDragging()
-            
+            break
+            //TODO: view.didEndDragging()
         default:
             break
         }
