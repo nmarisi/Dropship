@@ -6,14 +6,18 @@
 
 typealias DragDropView = protocol<UIDynamicItem, NSObjectProtocol>
 
-protocol Droppable: DragDropView {
+protocol Catchable: DragDropView {
     
 }
 
-protocol Draggable : DragDropView {
+@objc protocol Draggable : DragDropView {
     
-    func didBeginDragging()
-    func didEndDragging()
+    optional func didBeginDragging()
+    optional func didEndDragging()
+}
+
+protocol DropshipDelegate {
+    
 }
 
 class TestView: UIView, Draggable {
@@ -47,8 +51,8 @@ extension UIView {
 
 class DropshipManager: NSObject {
     
-    var draggableItems = [UIView]()
-    var droppableItems = [Droppable]()
+    var draggableItems = [Draggable]()
+    var catchableItems = [Catchable]()
     
     // TODO: hack for testing
     var lastLocation: CGPoint = CGPointZero
@@ -62,8 +66,7 @@ class DropshipManager: NSObject {
         self.mainView = mainView
     }
    
-    //func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
-    func registerDraggableItem(item: UIView) {
+    func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
         draggableItems.append(item)
         
         let panGesture = DropshipGestureRecognizer(target: self, action: "draggingView:")
@@ -84,15 +87,15 @@ class DropshipManager: NSObject {
         }
     }
     
-    func registerDroppableItem<T: UIView where T: Droppable>(item: T) {
-        droppableItems.append(item)
+    func registerDroppableItem<T: UIView where T: Catchable>(item: T) {
+        catchableItems.append(item)
     }
     
-    func deregisterDroppableItem<T: UIView where T: Droppable>(item: T) {
+    func deregisterDroppableItem<T: UIView where T: Catchable>(item: T) {
         
-        for (index, droppableItem) in droppableItems.enumerate() {
+        for (index, droppableItem) in catchableItems.enumerate() {
             if droppableItem.isEqual(item) {
-                droppableItems.removeAtIndex(index)
+                catchableItems.removeAtIndex(index)
             }
         }
     }
@@ -107,7 +110,7 @@ class DropshipManager: NSObject {
    
         switch (sender.state) {
         case .Began:
-            (view as? Draggable)?.didBeginDragging()
+            (view as? Draggable)?.didBeginDragging!()
             
             view.superview?.bringSubviewToFront(view)
             lastLocation = view.center
