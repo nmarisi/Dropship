@@ -28,6 +28,10 @@ class TestView: UIView, Draggable {
     }
 }
 
+class DropView: UIView, Catchable {
+    
+}
+
 class DropshipGestureRecognizer: UIPanGestureRecognizer {
     
 }
@@ -52,7 +56,7 @@ extension UIView {
 class DropshipManager: NSObject {
     
     var draggableItems = [Draggable]()
-    var catchableItems = [Catchable]()
+    var catchableItems = [UIView]()
     
     // TODO: hack for testing
     var lastLocation: CGPoint = CGPointZero
@@ -127,12 +131,36 @@ class DropshipManager: NSObject {
             fallthrough
         
         case .Ended:
+            if checkIfViewIsInDropArea(view, gesture: sender)  {
+                print("Dropped on a DropArea");
+            } else {
+                print("Dropped somehwere else");
+            }
             break
             //TODO: view.didEndDragging()
         default:
             break
         }
         
+    }
+    
+    private func checkIfViewIsInDropArea(view: UIView, gesture: DropshipGestureRecognizer) -> Bool{
+        
+        //let isInArea = catchableItems.map({$0.pointInside(gesture.locationInView($0), withEvent: nil)})
+        //let isInArea = catchableItems.map({CGRectIntersectsRect($0.frame, view.frame)})
+        let isInArea = catchableItems.map({ dropArea -> Bool
+            in
+            
+            let intRect = CGRectIntersection(dropArea.frame, view.frame)
+            let intRectArea = CGRectGetHeight(intRect) * CGRectGetWidth(intRect)
+            let viewArea = CGRectGetHeight(view.frame) * CGRectGetWidth(view.frame)
+            let overlapsMoreThanHalf = (viewArea / intRectArea) > 0.5 ? true : false
+
+            return overlapsMoreThanHalf
+            
+            
+        })
+        return isInArea.reduce(false, combine: ({ $0 || $1}))
     }
 
 }
