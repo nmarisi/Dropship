@@ -17,6 +17,8 @@ protocol Catchable: DragDropView {
 }
 
 protocol DropshipDelegate {
+    func didBeginDragging(draggable: UIView)
+    func didEndDragging(draggable: Draggable, onDropArea: Bool)
     
 }
 
@@ -57,6 +59,8 @@ class DropshipManager: NSObject {
     
     var draggableItems = [Draggable]()
     var catchableItems = [UIView]()
+    
+    var delegate: DropshipDelegate?
     
     // TODO: hack for testing
     var lastLocation: CGPoint = CGPointZero
@@ -128,12 +132,21 @@ class DropshipManager: NSObject {
     
     
         case .Cancelled:
-            fallthrough
+            dragBack(view)
         
         case .Ended:
+            guard let del = delegate, draggable = view as? Draggable else {
+                return
+            }
+            
+            
             if checkIfViewIsInDropArea(view, gesture: sender)  {
+                
+                del.didEndDragging(draggable, onDropArea: true)
+                
                 print("Dropped on a DropArea");
             } else {
+                del.didEndDragging(draggable, onDropArea: false)
                 print("Dropped somehwere else");
             }
             break
@@ -144,10 +157,12 @@ class DropshipManager: NSObject {
         
     }
     
+    private func dragBack(view: UIView) {
+        
+    }
+    
     private func checkIfViewIsInDropArea(view: UIView, gesture: DropshipGestureRecognizer) -> Bool{
         
-        //let isInArea = catchableItems.map({$0.pointInside(gesture.locationInView($0), withEvent: nil)})
-        //let isInArea = catchableItems.map({CGRectIntersectsRect($0.frame, view.frame)})
         let isInArea = catchableItems.map({ dropArea -> Bool
             in
             
