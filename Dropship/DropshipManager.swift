@@ -55,12 +55,13 @@ extension UIView {
     }
 }
 
-class DropshipManager: NSObject {
+class DropshipManager: NSObject, UIDynamicAnimatorDelegate {
     
     var draggableItems = [Draggable]()
     var catchableItems = [UIView]()
     
     var delegate: DropshipDelegate?
+    var dynamicAnimator: UIDynamicAnimator
     
     // TODO: hack for testing
     var lastLocation: CGPoint = CGPointZero
@@ -72,6 +73,9 @@ class DropshipManager: NSObject {
     
     init(mainView: UIView) {
         self.mainView = mainView
+        self.dynamicAnimator = UIDynamicAnimator(referenceView: mainView)
+        super.init()
+        self.dynamicAnimator.delegate = self
     }
    
     func registerDraggableItem<T: UIView where T: Draggable>(item: T) {
