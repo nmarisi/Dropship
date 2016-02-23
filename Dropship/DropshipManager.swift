@@ -30,6 +30,14 @@ class TestView: UIView, Draggable {
     }
 }
 
+class TestImageView: UIImageView, Draggable {
+    func didBeginDragging() {
+    }
+    func didEndDragging() {
+        
+    }
+}
+
 class DropView: UIView, Catchable {
     
 }
@@ -122,7 +130,7 @@ class DropshipManager: NSObject, UIDynamicAnimatorDelegate {
    
         switch (sender.state) {
         case .Began:
-            (view as? Draggable)?.didBeginDragging!()
+            delegate?.didBeginDragging(view)
             
             view.superview?.bringSubviewToFront(view)
             lastLocation = view.center
